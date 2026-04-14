@@ -1,17 +1,17 @@
 # Snapcast_client_ESP32_HA
 Snapcast client for ESP32 and Home Assistant + assist function with pipeline
 
-## Firmware binaire (ESP32)
+## ESP32 firmware binary
 
-Un firmware précompilé pour ESP32 doit être mis à disposition dans les **Releases GitHub** du projet  
+A prebuilt firmware binary for ESP32 should be published in the project's **GitHub Releases**  
 (`snapcast_client_esp32_ha.bin`).
 
-Lien direct (dernière version) :  
+Direct link (latest release):  
 https://github.com/Tirguy/Snapcast_client_ESP32_HA/releases/latest
 
-## Flash du binaire avec les outils Arduino
+## Flash the binary with Arduino tools
 
-Exemple avec `arduino-cli` (outil Arduino officiel) :
+Example using `arduino-cli` (official Arduino tool):
 
 ```bash
 arduino-cli upload \
@@ -20,13 +20,13 @@ arduino-cli upload \
   --input-file snapcast_client_esp32_ha.bin
 ```
 
-## Flash du binaire avec les outils Espressif
+## Flash the binary with Espressif tools
 
-Exemple avec `esptool.py` :
+Example using `esptool.py`:
 
 ```bash
 esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
   write_flash -z 0x10000 snapcast_client_esp32_ha.bin
 ```
 
-> Remarque : adaptez le port série (`/dev/ttyUSB0`, `COMx`, etc.) selon votre machine.
+> Note: adjust the serial port (`/dev/ttyUSB0`, `COMx`, etc.) for your machine.
