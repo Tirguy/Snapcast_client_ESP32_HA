@@ -1,0 +1,18 @@
+# Build artifacts
+.pio/
+build/
+build_*/
+*.elf
+*.bin
+*.map
+
+# Logs
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Project archives (kept out of this published repo)
+00.archives/
