@@ -3,7 +3,7 @@ Snapcast client for ESP32 and Home Assistant + assist function with pipeline
 
 ## ESP32 firmware binary
 
-A prebuilt firmware binary for ESP32 should be published in the project's **GitHub Releases**  
+A prebuilt firmware binary for ESP32 is available in the project's **GitHub Releases**  
 (`snapcast_client_esp32_ha.bin`).
 
 Direct link (latest release):  
@@ -30,3 +30,4 @@ esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 460800 \
 ```
 
 > Note: adjust the serial port (`/dev/ttyUSB0`, `COMx`, etc.) for your machine.
+> The `0x10000` offset is the usual Arduino app offset on ESP32; if your board/partition table differs, use the offset required by your configuration.
