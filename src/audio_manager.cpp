@@ -471,16 +471,22 @@ void AudioManager::outputTaskLoop() {
         LOGI(kTag, "Sync trim: %+ld ms", static_cast<long>(kAppConfig.audio_runtime.sync_trim_ms));
       }
       int64_t effective_buffer_us = static_cast<int64_t>(buffer_ms_) * 1000LL;
-      if (!hasPsram() && chunk.duration_us > 0) {
-        constexpr int64_t kNoPsramSafeBufferUs = 280000LL;  // 280ms ≤ 14 chunks × 20ms, fits pcm_queue_depth=16
-        if (effective_buffer_us > kNoPsramSafeBufferUs) {
-          effective_buffer_us = kNoPsramSafeBufferUs;
+      if (chunk.duration_us > 0) {
+        constexpr uint8_t kQueueHeadroomChunks = 2;
+        const uint8_t queue_depth = kAppConfig.audio_runtime.pcm_queue_depth;
+        const uint8_t usable_chunks =
+            (queue_depth > kQueueHeadroomChunks) ? (queue_depth - kQueueHeadroomChunks) : 1;
+        const int64_t queue_safe_buffer_us = chunk.duration_us * static_cast<int64_t>(usable_chunks);
+        if (effective_buffer_us > queue_safe_buffer_us) {
+          effective_buffer_us = queue_safe_buffer_us;
         }
         const int32_t effective_buffer_ms = static_cast<int32_t>(effective_buffer_us / 1000LL);
         if (effective_buffer_ms != last_logged_effective_buffer_ms) {
           last_logged_effective_buffer_ms = effective_buffer_ms;
-          LOGW(kTag, "PSRAM inactive, effective sync buffer capped to %ld ms (server asked %ld ms)",
-               static_cast<long>(effective_buffer_ms), static_cast<long>(buffer_ms_));
+          LOGW(kTag,
+               "Effective sync buffer capped to %ld ms by local PCM queue capacity (server asked %ld ms, depth=%u)",
+               static_cast<long>(effective_buffer_ms), static_cast<long>(buffer_ms_),
+               static_cast<unsigned>(queue_depth));
         }
       }
 

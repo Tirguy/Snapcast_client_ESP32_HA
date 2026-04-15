@@ -8,6 +8,7 @@ This file summarizes major firmware changes implemented during the recent stabil
 
 - fixed high-overhead receive path issues in Snapcast ingestion
 - stabilized PCM queue behavior and overflow handling
+- capped active sync scheduling buffer to local PCM queue capacity when server `bufferMs` exceeds what the device can hold
 - adjusted queue depth and effective buffering policy for no-PSRAM boards
 - added robust sync protections for TIME-based offset updates:
   - outlier filtering

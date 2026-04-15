@@ -19,13 +19,14 @@ This firmware was not written from scratch.
 
 Public origin references used for this project lineage:
 
-- Sonocotta Esparagus Snapclient project page: https://sonocotta.github.io/esparagus-snapclient/
-- Snapcast upstream project (protocol/ecosystem reference): https://github.com/badaix/snapcast
+- Sonocotta Esparagus Snapclient project page: <https://sonocotta.github.io/esparagus-snapclient/>
+- Snapcast upstream project (protocol/ecosystem reference): <https://github.com/badaix/snapcast>
 
 Traceability note:
 
-- this workspace currently has no `.git` remote metadata, so the exact original clone URL cannot be recovered automatically from Git here.
-- the two URLs above are the documented public origins/reference points used for attribution.
+- the published source repository for this Arduino firmware snapshot is: <https://github.com/Tirguy/Snapcast_client_ESP32_HA>
+- this workspace copy still does not preserve the original upstream clone metadata, so the exact initial clone URL cannot be recovered automatically from Git here.
+- the two URLs above remain the documented public origins/reference points used for attribution.
 
 Practical note:
 
@@ -47,6 +48,138 @@ Important constraints:
 
 - GPIO26 and GPIO25 are shared between output and mic clock lines.
 - GPIO39 is input-only on ESP32 (cannot drive an output LED).
+
+## 2.a First Boot And Initial Provisioning
+
+On first boot, or whenever the device has no valid WiFi configuration, the ESP32 starts in provisioning AP mode.
+
+Connection method:
+
+- from a phone, tablet or laptop, connect to the WiFi access point named `Snapcast-Setup-XXXXXX`
+- `XXXXXX` is derived from the ESP32 chip identifier and changes from one board to another
+- once connected to this temporary WiFi network, open a browser and go to: `http://192.168.4.1`
+
+What happens next:
+
+- the configuration portal opens locally from the ESP32 itself
+- you enter the home WiFi credentials and the Snapcast / Home Assistant parameters
+- after saving, the board leaves AP mode and tries to join the configured WiFi network
+- once connected to your normal WiFi, the device is then reachable on its LAN IP address instead of `192.168.4.1`
+
+Useful notes:
+
+- in AP provisioning mode, the portal always exposes `192.168.4.1`
+- the page shows the current speaker name, the AP portal IP and the current WiFi state
+- once the device is already connected in STA mode, WiFi credentials are intentionally no longer editable from the standard portal page
+
+GPIO0 button usage:
+
+- the button wired to `GPIO0` is the WiFi reset / reprovisioning button
+- a long press of about `2500 ms` clears the stored WiFi credentials
+- after the long press is detected, the firmware waits for button release, then reboots cleanly
+- after reboot, the ESP32 starts again in provisioning AP mode so you can reconnect to `Snapcast-Setup-XXXXXX`
+- this action is intended to recover a device when the saved WiFi network has changed or when you want to move the speaker to another network
+
+Effect scope:
+
+- it resets WiFi onboarding data and restarts provisioning mode
+- it does not act as a full hardware factory reset of every runtime parameter documented elsewhere
+
+## 2.c Configuration Portal Content
+
+The configuration page is organized into four tabs:
+
+- `Reseau`
+- `Audio`
+- `Avance`
+- `Voix HA`
+
+### Reseau tab
+
+This tab is used to join the local WiFi and point the speaker to the Snapcast server.
+
+In provisioning AP mode, you can find:
+
+- `Nom du reseau WiFi (SSID)`: the WiFi network name to join
+- detected network list: a dropdown populated by `Scanner`, showing SSID, RSSI and lock state
+- `Scanner`: launches a WiFi scan from the ESP32 and fills the dropdown list
+- `Mot de passe WiFi`: the passphrase for the selected WiFi network
+- `Afficher`: toggles password visibility
+
+In both AP mode and connected STA mode, you can find:
+
+- `Adresse du serveur Snapcast`: hostname or IP address of the Snapcast server
+- `Port du flux Snapcast`: TCP port used by the Snapcast stream, typically `1704`
+
+In STA mode, WiFi credentials are displayed read-only and cannot be modified from this page.
+
+### Audio tab
+
+This tab is used to align playback and tune the equalizer.
+
+Available fields:
+
+- `Decalage du stream (ms)`: manual timing trim for this speaker; positive values delay this device if it plays too early
+- `Preset egaliseur`: quick equalizer selection
+
+Available presets:
+
+- `Normal`
+- `Bass Boost`
+- `Treble Boost`
+- `Bright`
+- `Custom`
+
+Equalizer controls:
+
+- `Bass Gain (dB)`: low-shelf gain adjustment
+- `Bass Frequency (Hz)`: low-shelf corner frequency
+- `Treble Gain (dB)`: high-shelf gain adjustment
+- `Treble Frequency (Hz)`: high-shelf corner frequency, limited to `12000 Hz`
+
+Behavior notes:
+
+- changing any EQ slider automatically switches the preset to `Custom`
+- the slider area is hidden when `Normal` is selected
+
+### Avance tab
+
+This tab currently contains the device identity setting.
+
+Available field:
+
+- `Nom de l'enceinte`: the friendly speaker name shown in the portal and propagated to Snapcast identity fields
+
+Validation rules:
+
+- maximum length: `32` characters
+- allowed characters: letters, digits, space, `_` and `-`
+
+### Voix HA tab
+
+This tab is dedicated to the Home Assistant Assist / Voice Satellite integration.
+
+Available fields and actions:
+
+- `Hote HA / IP`: Home Assistant hostname or IP address
+- `Port HA`: Home Assistant HTTP port, default `8123`
+- `Enregistrer hote`: saves host and port in runtime settings
+- `Re-init`: clears the stored host and port
+- `Token acces longue duree HA`: long-lived access token generated from the Home Assistant user profile
+- `Voir`: toggles token visibility
+- `Enregistrer token`: stores the token on the device
+- `Tester token`: validates access to Home Assistant and unlocks pipeline management only after a successful test
+- `Effacer token`: removes the stored token
+- `Pipeline ID Assist`: Assist pipeline identifier used by the voice flow
+- `Enregistrer pipeline`: saves the selected pipeline ID
+- `Lister pipelines HA`: queries Home Assistant and lists available Assist pipelines
+- `Selectionner`: fills the `Pipeline ID Assist` field from the discovered pipeline list
+
+Behavior notes:
+
+- pipeline editing is intentionally locked until the token test succeeds
+- the tab is separated from the main `/save` form and uses dedicated actions for host, token and pipeline persistence
+- this avoids saving invalid Assist parameters together with unrelated speaker settings
 
 ## 3. Runtime Design
 
